@@ -16,10 +16,19 @@ export default function EscolaCard({ escola, selecionada, onPress, disabled }) {
       disabled={disabled}
     >
       <Text style={globalStyles.title}>{escola.nome}</Text>
-      <Text style={globalStyles.subtitle}>{escola.endereco}</Text>
-      <Text style={globalStyles.label}>Bairro: {escola.bairro}</Text>
-      {!disabled && (
+      <Text style={globalStyles.subtitle}>📍 {escola.endereco}</Text>
+      <Text style={globalStyles.label}>Tipo: {escola.bairro}</Text>
+
+      {escola.distancia !== undefined && (
         <Text style={[globalStyles.label, { color: colors.primary }]}>
+          📏 {escola.distancia < 1
+            ? `${(escola.distancia * 1000).toFixed(0)} metros de você`
+            : `${escola.distancia.toFixed(2)} km de você`}
+        </Text>
+      )}
+
+      {!disabled && (
+        <Text style={[globalStyles.label, { color: colors.primary, marginTop: 4 }]}>
           Toque para registrar visita →
         </Text>
       )}
