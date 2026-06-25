@@ -9,10 +9,25 @@ import { salvarLocalizacao } from '../services/backend';
 import { buscarEscolas } from '../services/api';
 import EscolaCard from '../components/EscolaCard';
 
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+  const R = 6371; 
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function LocalizacaoScreen() {
   const [localizacao, setLocalizacao] = useState(null);
   const [loading, setLoading] = useState(false);
   const [escolas, setEscolas] = useState([]);
+  const [escolasProximas, setEscolasProximas] = useState([]);
   const [escolaSelecionada, setEscolaSelecionada] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [loadingEscolas, setLoadingEscolas] = useState(true);
@@ -20,6 +35,12 @@ export default function LocalizacaoScreen() {
   useEffect(() => {
     carregarEscolas();
   }, []);
+
+  useEffect(() => {
+    if (localizacao && escolas.length > 0) {
+      ordenarPorProximidade();
+    }
+  }, [localizacao, escolas]);
 
   async function carregarEscolas() {
     try {
@@ -31,6 +52,24 @@ export default function LocalizacaoScreen() {
     } finally {
       setLoadingEscolas(false);
     }
+  }
+
+  function ordenarPorProximidade() {
+    const comDistancia = escolas
+      .filter((e) => e.latitude && e.longitude) 
+      .map((escola) => ({
+        ...escola,
+        distancia: calcularDistancia(
+          localizacao.latitude,
+          localizacao.longitude,
+          escola.latitude,
+          escola.longitude
+        ),
+      }))
+      .sort((a, b) => a.distancia - b.distancia) 
+      .slice(0, 10); 
+
+    setEscolasProximas(comDistancia);
   }
 
   async function obterLocalizacao() {
@@ -102,13 +141,13 @@ export default function LocalizacaoScreen() {
       {localizacao && (
         <>
           <Text style={[globalStyles.screenTitle, { fontSize: 16, marginTop: 16 }]}>
-            Selecione uma escola para registrar:
+            10 escolas mais próximas de você:
           </Text>
 
           {loadingEscolas ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
-            escolas.slice(0, 10).map((escola, index) => (
+            escolasProximas.map((escola, index) => (
               <EscolaCard
                 key={index.toString()}
                 escola={escola}
